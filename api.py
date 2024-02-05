@@ -9,9 +9,17 @@ import requests
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for routes starting with /api/
+CORS(app, origins=["http://52.60.47.127:5173"])
 
-# Define your API endpoint
+@app.route('/', methods=['GET'])
+def index():
+    return send_from_directory('build', 'index.html')
+
+
+@app.route("/<path:path>")
+def serve_static(path):
+    return send_from_directory("build", path)
+
 @app.route('/analyze-pdf', methods=['POST'])
 def analyze():
 
@@ -21,7 +29,6 @@ def analyze():
     images = pdf2image.convert_from_bytes(pdf_bytes)
     img = np.asarray(images[0])
     
-    # img = np.asarray(pdf2image.convert_from_path(uploaded_file.read())[0])
 
     # Initialize the layout models
     model1 = lp.Detectron2LayoutModel('lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config', extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5], label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"})
@@ -44,4 +51,4 @@ def analyze():
     return send_file(img_byte_array, mimetype='image/jpeg')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
